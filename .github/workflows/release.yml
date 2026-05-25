@@ -1,0 +1,57 @@
+name: Release
+
+# Builds the Windows and macOS installers and attaches them to a GitHub Release.
+# Trigger by pushing a version tag (e.g. `git tag v0.1.0 && git push origin v0.1.0`)
+# or manually from the Actions tab (Run workflow).
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest # Apple Silicon + Intel (universal)
+            args: "--target universal-apple-darwin"
+          - platform: windows-latest # .msi + NSIS .exe
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build app and create release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v0.0.0-run{0}', github.run_number) }}
+          releaseName: "Font Sliding Puzzle ${{ github.ref_type == 'tag' && github.ref_name || github.run_number }}"
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

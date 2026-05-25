@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Licensed / restricted fonts — kept locally, never committed or shipped
+fonts-licensed/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

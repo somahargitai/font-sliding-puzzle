@@ -1,57 +1,29 @@
 import { Nav } from "./nav";
-import { getConfig, setConfig, PuzzleConfig } from "./state";
+import { loadSaved } from "./storage";
 
-const CANVAS_SIZE = 600;
-
-function buildDefaultConfig(): PuzzleConfig {
-  const gridSize = 4;
-  const canvas = document.createElement("canvas");
-  canvas.width = CANVAS_SIZE;
-  canvas.height = CANVAS_SIZE;
-  const ctx = canvas.getContext("2d")!;
-  const bg = "#f5f5f0";
-  const fg = "#111111";
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-  ctx.fillStyle = fg;
-  ctx.font = `480px "serif"`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("A", CANVAS_SIZE / 2, CANVAS_SIZE / 2);
-
-  const tileSize = CANVAS_SIZE / gridSize;
-  const tiles: string[] = [];
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const t = document.createElement("canvas");
-      t.width = tileSize;
-      t.height = tileSize;
-      const tctx = t.getContext("2d")!;
-      tctx.drawImage(canvas, c * tileSize, r * tileSize, tileSize, tileSize, 0, 0, tileSize, tileSize);
-      tiles.push(t.toDataURL("image/png"));
-    }
-  }
-
-  return {
-    fontFamily: "serif",
-    letter: "A",
-    gridSize,
-    canvasSize: CANVAS_SIZE,
-    fontSize: 480,
-    offsetX: 0,
-    offsetY: 0,
-    letterColor: fg,
-    bgColor: bg,
-    missingIndex: gridSize * gridSize - 1,
-    timerSeconds: null,
-    tiles,
-  };
-}
+const LOGO_SVG = `
+  <svg class="start-logo" viewBox="0 0 128 128" role="img" aria-label="Font Sliding Puzzle logó" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#6c8cff" />
+        <stop offset="1" stop-color="#c86bd6" />
+      </linearGradient>
+    </defs>
+    <rect x="6" y="6" width="116" height="116" rx="26" fill="#252530" stroke="#3a3a48" stroke-width="2" />
+    <g font-family="Georgia, serif" font-size="34" font-weight="600" fill="#ffffff" text-anchor="middle">
+      <rect x="20" y="20" width="40" height="40" rx="9" fill="url(#logo-grad)" />
+      <text x="40" y="41" dominant-baseline="central">A</text>
+      <rect x="68" y="20" width="40" height="40" rx="9" fill="url(#logo-grad)" opacity="0.88" />
+      <text x="88" y="41" dominant-baseline="central">g</text>
+      <rect x="20" y="68" width="40" height="40" rx="9" fill="url(#logo-grad)" opacity="0.72" />
+      <text x="40" y="89" dominant-baseline="central">Q</text>
+      <rect x="68" y="68" width="40" height="40" rx="9" fill="#1a1a1f" stroke="#3a3a48" stroke-width="2" stroke-dasharray="5 4" />
+    </g>
+  </svg>
+`;
 
 export function renderStart(root: HTMLElement, nav: Nav): void {
-  const config = getConfig();
-  const letter = config?.letter ?? "A";
-  const fontFamily = config?.fontFamily ?? "serif";
+  const saved = loadSaved();
 
   root.innerHTML = `
     <div class="start">
@@ -64,26 +36,23 @@ export function renderStart(root: HTMLElement, nav: Nav): void {
 
       <div class="start-content">
         <div class="start-preview" aria-hidden="true">
-          <span class="start-glyph" style="font-family: '${fontFamily}', serif">${letter}</span>
+          ${LOGO_SVG}
         </div>
         <h1 class="start-title">Font Sliding Puzzle</h1>
         <p class="start-sub">Csúsztasd a helyére a betűt.</p>
         <button class="primary big" id="start-btn">Start ▶</button>
         <p class="start-hint">
-          ${config ? `Aktuális: <strong>${letter}</strong> · ${config.gridSize}×${config.gridSize}${config.timerSeconds ? ` · ${Math.floor(config.timerSeconds / 60)}:${String(config.timerSeconds % 60).padStart(2, "0")}` : ""}` : "Alapértelmezett konfiguráció (A betű, 4×4)"}
+          ${saved.length ? `${saved.length} mentett játék a könyvtárban` : "Még nincs mentett játék – tervezz egyet a fogaskerékkel."}
         </p>
       </div>
     </div>
   `;
 
   root.querySelector<HTMLButtonElement>("#start-btn")!.addEventListener("click", () => {
-    if (!getConfig()) {
-      setConfig(buildDefaultConfig());
-    }
-    nav.game();
+    nav.library();
   });
 
   root.querySelector<HTMLButtonElement>("#gear")!.addEventListener("click", () => {
-    nav.planner();
+    nav.editor();
   });
 }

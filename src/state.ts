@@ -11,6 +11,9 @@ export type PuzzleConfig = {
   missingIndex: number;
   timerSeconds: number | null;
   tiles: string[];
+  // Optional; absent on puzzles saved before backgrounds existed (treated as "plain").
+  background?: "plain" | "pattern";
+  patternSeed?: number;
 };
 
 let currentConfig: PuzzleConfig | null = null;
